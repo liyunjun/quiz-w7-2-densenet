@@ -60,9 +60,69 @@ def densenet(images, num_classes=1001, is_training=False,
     with tf.variable_scope(scope, 'DenseNet', [images, num_classes]):
         with slim.arg_scope(bn_drp_scope(is_training=is_training,
                                          keep_prob=dropout_keep_prob)) as ssc:
-            pass
+            ##pass
             ##########################
-            # Put your code here.
+            # Before entering the first dense block, a convolution with 16 (or twice the growth rate for DenseNet-BC) output channels is performed on the input images. 
+
+            end_point = 'pre_conv'
+            net  = slim.conv2d(images, 2*growth, [7, 7], stride=2, scope=end_point)
+            end_points[end_point] = net
+            
+            end_point = 'pre_pool'
+            net = slim.max_pool2d(net, [3, 3], stride=2, scope=end_point)
+            end_points[end_point] = net           
+
+            end_point = 'block1'
+            net =  block(net, 6, growth, scope=end_point)
+            end_points[end_point] = net
+            
+            end_point = 'transition1'
+            net =  transition(net,reduce_dim(net), scope=end_point)
+            
+            end_point = 'block2'
+            net =  block(net, 12, growth, scope=end_point)
+            end_points[end_point] = net
+            
+            end_point = 'transition2'
+            net =  transition(net,reduce_dim(net), scope=end_point)
+            
+            end_point = 'block3'
+            net =  block(net, 24, growth, scope=end_point)
+            end_points[end_point] = net
+            
+            end_point = 'transition3'
+            net =  transition(net,reduce_dim(net), scope=end_point)
+            
+            end_point = 'block4'
+            net =  block(net, 18, growth, scope=end_point)
+            end_points[end_point] = net
+            
+            end_point='last_BN_relu'
+            net=slim.batch_norm(net,scope=end_point)
+            net=tf.nn.relu(net)
+            
+            end_point = 'global_pool'
+            net = tf.reduce_mean(net, [1, 2], keep_dims=True, name=end_point)
+            end_points[end_point] = net
+            
+            net = slim.dropout(net, keep_prob=dropout_keep_prob, scope='Dropout_1b')
+            
+            net = slim.flatten(net, scope='PreLogitsFlatten')
+            end_points['PreLogitsFlatten'] = net
+          
+
+            end_point = 'logits'
+
+            logits =slim.fully_connected(net, num_classes, activation_fn=None, scope=end_point)
+
+            end_points[end_point] = logits
+
+            
+
+            end_points['Predictions'] = tf.nn.softmax(logits, name='Predictions')
+
+            ##########################
+
             ##########################
 
     return logits, end_points
