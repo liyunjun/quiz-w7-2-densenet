@@ -29,6 +29,10 @@ def block(net, layers, growth, scope='block'):
         net = tf.concat(axis=3, values=[net, tmp])
     return net
 
+def transition(net, growth, scope='transition'):   
+    net =  bn_act_conv_drp(net, growth, [1, 1], scope=scope +'_conv2')    
+    net = slim.avg_pool2d(net, [2, 2], stride=2, scope=scope +'_pool2')     
+    return net
 
 def densenet(images, num_classes=1001, is_training=False,
              dropout_keep_prob=0.8,
