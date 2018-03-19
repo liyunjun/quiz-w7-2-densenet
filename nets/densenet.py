@@ -30,9 +30,9 @@ def block(net, layers, growth, scope='block'):
     return net
 
 def transition(net, growth, scope='transition'):
-    net =  bn_act_conv_drp(net, growth, [1, 1], scope=scope +'_conv2')    
-    net = slim.avg_pool2d(net, [2, 2], stride=2, scope=scope +'_pool2')     
-    return net
+    net =  bn_act_conv_drp(net, growth, [1, 1], scope=scope +'_conv2')
+    net = slim.avg_pool2d(net, [2, 2], stride=2, scope=scope +'_pool2') 
+    return net
 
 def densenet(images, num_classes=1001, is_training=False,
              dropout_keep_prob=0.8,
@@ -64,18 +64,15 @@ def densenet(images, num_classes=1001, is_training=False,
     with tf.variable_scope(scope, 'DenseNet', [images, num_classes]):
         with slim.arg_scope(bn_drp_scope(is_training=is_training,
                                          keep_prob=dropout_keep_prob)) as ssc:
-            ##pass
             ##########################
             # Before entering the first dense block, a convolution with 16 (or twice the growth rate for DenseNet-BC) output channels is performed on the input images. 
-
             end_point = 'pre_conv'
             net  = slim.conv2d(images, 2*growth, [7, 7], stride=2, scope=end_point)
             end_points[end_point] = net
-            
             end_point = 'pre_pool'
             net = slim.max_pool2d(net, [3, 3], stride=2, scope=end_point)
-            end_points[end_point] = net           
-
+            end_points[end_point] = net
+            
             end_point = 'block1'
             net =  block(net, 6, growth, scope=end_point)
             end_points[end_point] = net
@@ -101,8 +98,11 @@ def densenet(images, num_classes=1001, is_training=False,
             net =  block(net, 18, growth, scope=end_point)
             end_points[end_point] = net
             
+            
+            
             end_point='last_BN_relu'
             net=slim.batch_norm(net,scope=end_point)
+            
             net=tf.nn.relu(net)
             
             end_point = 'global_pool'
@@ -114,19 +114,11 @@ def densenet(images, num_classes=1001, is_training=False,
             net = slim.flatten(net, scope='PreLogitsFlatten')
             end_points['PreLogitsFlatten'] = net
           
-
             end_point = 'logits'
-
             logits =slim.fully_connected(net, num_classes, activation_fn=None, scope=end_point)
-
             end_points[end_point] = logits
-
             
-
             end_points['Predictions'] = tf.nn.softmax(logits, name='Predictions')
-
-            ##########################
-
             ##########################
 
     return logits, end_points
